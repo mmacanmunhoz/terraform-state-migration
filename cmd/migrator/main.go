@@ -13,12 +13,12 @@ import (
 )
 
 var (
-	cfgFile     string
-	batchSize   int
-	dryRun      bool
-	projects    string
-	logLevel    string
-	appVersion  string = "dev" // Será definida durante o build
+	cfgFile    string
+	batchSize  int
+	dryRun     bool
+	projects   string
+	logLevel   string
+	appVersion string = "dev" // Será definida durante o build
 )
 
 var rootCmd = &cobra.Command{
@@ -45,7 +45,7 @@ Mostra quais workspaces têm estado (migráveis) e quais não têm (serão ignor
 Exemplos:
   migrator list                    # Lista todos os workspaces
   migrator list --log-level debug  # Lista com logs detalhados`,
-	RunE:  runList,
+	RunE: runList,
 }
 
 var migrateCmd = &cobra.Command{
@@ -123,8 +123,8 @@ func runList(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Printf("\n📋 Workspaces encontrados na organização '%s':\n\n", cfg.TerraformCloud.Organization)
-	
+	fmt.Printf("\n Workspaces encontrados na organização '%s':\n\n", cfg.TerraformCloud.Organization)
+
 	for i, ws := range workspaces {
 		stateIcon := "❌"
 		stateText := "SEM ESTADO"
@@ -132,32 +132,32 @@ func runList(cmd *cobra.Command, args []string) error {
 			stateIcon = "✅"
 			stateText = "COM ESTADO"
 		}
-		
+
 		fmt.Printf("%d. %s %s %s\n", i+1, stateIcon, ws.Name, stateText)
 		if ws.Description != "" {
-			fmt.Printf("   📝 Descrição: %s\n", ws.Description)
+			fmt.Printf("Descrição: %s\n", ws.Description)
 		}
-		fmt.Printf("   🔑 ID: %s\n", ws.ID)
+		fmt.Printf("  ID: %s\n", ws.ID)
 		if ws.HasState {
-			fmt.Printf("   📦 Versão do estado: %s\n", ws.CurrentStateVersion)
+			fmt.Printf(" Versão do estado: %s\n", ws.CurrentStateVersion)
 		}
 		fmt.Println()
 	}
 
-	fmt.Printf("📊 Resumo:\n")
+	fmt.Printf(" Resumo:\n")
 	fmt.Printf("   • Total de workspaces: %d\n", len(workspaces))
 	fmt.Printf("   • Com estado (migráveis): %d\n", withState)
 	fmt.Printf("   • Sem estado (serão ignorados): %d\n", withoutState)
-	
+
 	if withState > 0 {
-		fmt.Printf("\n💡 Para migrar TODOS os workspaces com estado:\n")
+		fmt.Printf("\n Para migrar TODOS os workspaces com estado:\n")
 		fmt.Printf("   ./migrator migrate\n\n")
-		fmt.Printf("💡 Para migrar workspaces específicos:\n")
+		fmt.Printf(" Para migrar workspaces específicos:\n")
 		fmt.Printf("   ./migrator migrate --projects \"workspace1,workspace2\"\n\n")
-		fmt.Printf("💡 Para simular a migração primeiro:\n")
+		fmt.Printf(" Para simular a migração primeiro:\n")
 		fmt.Printf("   ./migrator migrate --dry-run\n")
 	}
-	
+
 	return nil
 }
 
@@ -199,7 +199,7 @@ func runMigrate(cmd *cobra.Command, args []string) error {
 	}
 
 	if dryRun {
-		logrus.Info("🧪 MODO DRY-RUN ativado - nenhuma alteração será feita")
+		logrus.Info("MODO DRY-RUN ativado - nenhuma alteração será feita")
 		logrus.Info("Use este modo para testar a migração antes de executá-la")
 	}
 
@@ -214,7 +214,7 @@ func runMigrate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("erro durante a migração: %w", err)
 	}
 
-	logrus.Info("🎉 Migração concluída com sucesso!")
+	logrus.Info(" Migração concluída com sucesso!")
 	return nil
 }
 

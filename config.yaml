@@ -7,6 +7,7 @@ aws:
   bucket: ""
   prefix: ""
   profile: ""
+  accountid: ""
 
 migration:
   batch_size: 5

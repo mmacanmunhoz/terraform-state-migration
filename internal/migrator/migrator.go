@@ -49,7 +49,7 @@ func NewMigrator(cfg *config.Config) (*Migrator, error) {
 	}
 
 	// Criar client do S3
-	s3Client, err := s3client.NewClient(cfg.AWS.Region, cfg.AWS.Bucket, cfg.AWS.Prefix, cfg.AWS.Profile)
+	s3Client, err := s3client.NewClient(cfg.AWS.Region, cfg.AWS.Bucket, cfg.AWS.Prefix, cfg.AWS.Profile, cfg.AWS.AccountID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao criar client do S3: %w", err)
 	}

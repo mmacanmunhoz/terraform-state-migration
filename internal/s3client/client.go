@@ -16,10 +16,11 @@ import (
 )
 
 type Client struct {
-	s3Client *s3.Client
-	bucket   string
-	prefix   string
-	logger   *logrus.Entry
+	s3Client  *s3.Client
+	bucket    string
+	prefix    string
+	accountID string
+	logger    *logrus.Entry
 }
 
 type UploadOptions struct {
@@ -30,7 +31,7 @@ type UploadOptions struct {
 }
 
 // NewClient cria um novo client S3
-func NewClient(region, bucket, prefix, profile string) (*Client, error) {
+func NewClient(region, bucket, prefix, profile, accountID string) (*Client, error) {
 	var cfg aws.Config
 	var err error
 	
@@ -60,10 +61,11 @@ func NewClient(region, bucket, prefix, profile string) (*Client, error) {
 	})
 
 	client := &Client{
-		s3Client: s3Client,
-		bucket:   bucket,
-		prefix:   prefix,
-		logger:   logger,
+		s3Client:  s3Client,
+		bucket:    bucket,
+		prefix:    prefix,
+		accountID: accountID,
+		logger:    logger,
 	}
 
 	return client, nil
@@ -185,7 +187,7 @@ func (c *Client) uploadFile(ctx context.Context, options UploadOptions) error {
 
 // generateStateKey gera a chave S3 para um arquivo de estado
 func (c *Client) generateStateKey(organization, workspaceName, filename string) string {
-	// Estrutura: projeto/terraform.tfstate
-	// Exemplo: arcotech-aws-budget-alert/terraform.tfstate
-	return filepath.Join(workspaceName, filename)
+	// Estrutura: accountID/workspace/arquivo
+	// Exemplo: 339712781224/arcotech-aws-budget-alert/terraform.tfstate
+	return filepath.Join(c.accountID, workspaceName, filename)
 }

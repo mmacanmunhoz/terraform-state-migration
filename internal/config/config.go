@@ -19,10 +19,11 @@ type TerraformCloudConfig struct {
 }
 
 type AWSConfig struct {
-	Region  string `mapstructure:"region"`
-	Bucket  string `mapstructure:"bucket"`
-	Prefix  string `mapstructure:"prefix"`
-	Profile string `mapstructure:"profile"`
+	Region    string `mapstructure:"region"`
+	Bucket    string `mapstructure:"bucket"`
+	Prefix    string `mapstructure:"prefix"`
+	Profile   string `mapstructure:"profile"`
+	AccountID string `mapstructure:"accountid"`
 }
 
 type MigrationConfig struct {
@@ -51,6 +52,7 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("aws.region", "AWS_REGION")
 	viper.BindEnv("aws.bucket", "S3_BUCKET")
 	viper.BindEnv("aws.prefix", "S3_PREFIX")
+	viper.BindEnv("aws.accountid", "AWS_ACCOUNTID")
 
 	viper.AutomaticEnv()
 
@@ -62,6 +64,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("migration.retry_attempts", 3)
 	viper.SetDefault("logging.level", "info")
 	viper.SetDefault("logging.file", "migration.log")
+	viper.SetDefault("aws.accountid", "339712781224")
 
 	// Tentar ler o arquivo de configuração
 	if err := viper.ReadInConfig(); err != nil {
