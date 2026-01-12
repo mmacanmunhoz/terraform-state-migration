@@ -1,0 +1,36 @@
+# Logs
+*.log
+migration.log
+
+# Binários
+/migrator
+/terraform-cloud-s3-migrator
+
+# Configurações locais
+config.local.yaml
+.env
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Diretórios de build
+/build/
+/dist/
+
+# Arquivos do editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de teste
+coverage.out
+*.test
+
+# Dependências do Go
+vendor/

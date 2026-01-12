@@ -1,0 +1,18 @@
+terraform_cloud:
+  token: ""
+  organization: ""
+
+aws:
+  region: "us-east-1"
+  bucket: ""
+  prefix: ""
+  profile: ""
+
+migration:
+  batch_size: 5
+  concurrent_uploads: 3
+  retry_attempts: 3
+  
+logging:
+  level: "info"
+  file: "migration.log"

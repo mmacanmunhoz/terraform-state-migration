@@ -1,0 +1,56 @@
+# Exemplo de configuração
+# Copie este arquivo para config.yaml e preencha com suas informações
+
+terraform_cloud:
+  # Token de API do Terraform Cloud
+  # Obtenha em: https://app.terraform.io/app/settings/tokens
+  token: "your-terraform-cloud-token-here"
+  
+  # Nome da sua organização no Terraform Cloud
+  organization: "your-organization-name"
+
+aws:
+  # Região AWS onde está o bucket S3
+  region: "us-east-1"
+  
+  # Nome do bucket S3 de destino
+  bucket: "your-s3-bucket-name"
+  
+  # Prefixo para organizar os arquivos no S3
+  prefix: "terraform-states/"
+
+migration:
+  # Quantos workspaces processar por vez
+  # Ajuste conforme necessário para evitar rate limiting
+  batch_size: 5
+  
+  # Quantos uploads simultâneos por batch
+  # Mantenha baixo para evitar sobrecarregar as APIs
+  concurrent_uploads: 3
+  
+  # Número de tentativas em caso de falha
+  retry_attempts: 3
+
+logging:
+  # Nível de log: debug, info, warn, error
+  level: "info"
+  
+  # Arquivo para salvar os logs (opcional)
+  file: "migration.log"
+
+# Exemplos de uso após configurar:
+#
+# 1. Listar todos os workspaces:
+#    ./migrator list
+#
+# 2. Simular migração (dry-run):
+#    ./migrator migrate --dry-run
+#
+# 3. Migrar todos com batch pequeno:
+#    ./migrator migrate --batch-size 2
+#
+# 4. Migrar workspaces específicos:
+#    ./migrator migrate --projects "workspace1,workspace2,workspace3"
+#
+# 5. Migração com mais logs:
+#    ./migrator migrate --log-level debug
