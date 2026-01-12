@@ -13,6 +13,7 @@ import (
 type Client struct {
 	client       *tfe.Client
 	organization string
+	token        string
 	logger       *logrus.Entry
 }
 
@@ -51,6 +52,7 @@ func NewClient(token, organization string) (*Client, error) {
 	return &Client{
 		client:       client,
 		organization: organization,
+		token:        token,
 		logger:       logger,
 	}, nil
 }
@@ -125,11 +127,24 @@ func (c *Client) GetWorkspaceState(ctx context.Context, workspaceID string) (*St
 	}
 
 	// Fazer download do arquivo de estado
-	resp, err := http.Get(stateURL)
+	req, err := http.NewRequest("GET", stateURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao criar requisição para download do estado: %w", err)
+	}
+	
+	// Adicionar token de autenticação
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao fazer download do estado do workspace %s: %w", workspace.Name, err)
 	}
 	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("erro HTTP %d ao fazer download do estado do workspace %s", resp.StatusCode, workspace.Name)
+	}
 
 	stateContent, err := io.ReadAll(resp.Body)
 	if err != nil {
