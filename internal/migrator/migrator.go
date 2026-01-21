@@ -3,6 +3,7 @@ package migrator
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,10 +15,10 @@ import (
 )
 
 type Migrator struct {
-	tfClient  *terraform.Client
-	s3Client  *s3client.Client
-	config    *config.Config
-	logger    *logrus.Entry
+	tfClient *terraform.Client
+	s3Client *s3client.Client
+	config   *config.Config
+	logger   *logrus.Entry
 }
 
 type MigrationOptions struct {
@@ -62,6 +63,27 @@ func NewMigrator(cfg *config.Config) (*Migrator, error) {
 		config:   cfg,
 		logger:   logger,
 	}, nil
+}
+
+// removeEnvironmentSuffix remove sufixos comuns de ambiente do nome do workspace
+func (m *Migrator) removeEnvironmentSuffix(workspaceName string) string {
+	// Lista de sufixos de ambiente comuns
+	envSuffixes := []string{"-stg", "-prd", "-dev", "-prod", "-staging", "-production", "-test", "-qa", "-uat"}
+
+	for _, suffix := range envSuffixes {
+		if strings.HasSuffix(strings.ToLower(workspaceName), suffix) {
+			cleanName := workspaceName[:len(workspaceName)-len(suffix)]
+			m.logger.WithFields(logrus.Fields{
+				"original_name":  workspaceName,
+				"clean_name":     cleanName,
+				"removed_suffix": suffix,
+			}).Debug("Nome do workspace limpo para upload no S3")
+			return cleanName
+		}
+	}
+
+	// Se não encontrou nenhum sufixo conhecido, retorna o nome original
+	return workspaceName
 }
 
 // ValidateConnections valida as conexões com Terraform Cloud e S3
@@ -163,7 +185,7 @@ func (m *Migrator) getWorkspacesToMigrate(ctx context.Context, projectFilter []s
 			}
 			workspaces = append(workspaces, *workspace)
 		}
-		
+
 		if len(notFoundProjects) > 0 {
 			m.logger.WithField("not_found", notFoundProjects).Warn("Alguns projetos especificados não foram encontrados")
 		}
@@ -181,43 +203,44 @@ func (m *Migrator) getWorkspacesToMigrate(ctx context.Context, projectFilter []s
 	var workspacesWithState []terraform.Workspace
 	var workspacesWithoutState []string
 	var existingStates []string
-	
+
 	for _, ws := range workspaces {
 		if !ws.HasState {
 			m.logger.WithField("workspace", ws.Name).Debug("Workspace sem estado do Terraform, pulando")
 			workspacesWithoutState = append(workspacesWithoutState, ws.Name)
 			continue
 		}
-		
-		// Verificar se já existe no S3
-		exists, err := m.s3Client.CheckStateExists(ctx, m.config.TerraformCloud.Organization, ws.Name)
+
+		// Verificar se já existe no S3 (usando nome limpo)
+		cleanName := m.removeEnvironmentSuffix(ws.Name)
+		exists, err := m.s3Client.CheckStateExists(ctx, m.config.TerraformCloud.Organization, cleanName)
 		if err != nil {
 			m.logger.WithError(err).WithField("workspace", ws.Name).Warn("Erro ao verificar existência no S3")
 			// Continua mesmo com erro de verificação
 		}
-		
+
 		if exists {
 			m.logger.WithField("workspace", ws.Name).Debug("Estado já existe no S3, pulando")
 			existingStates = append(existingStates, ws.Name)
 			continue
 		}
-		
+
 		workspacesWithState = append(workspacesWithState, ws)
 	}
 
 	// Log de resumo
 	m.logger.WithFields(logrus.Fields{
-		"total_found":           len(workspaces),
-		"with_state":            len(workspacesWithState),
-		"without_state":         len(workspacesWithoutState),
-		"already_migrated":      len(existingStates),
-		"to_migrate":            len(workspacesWithState),
+		"total_found":      len(workspaces),
+		"with_state":       len(workspacesWithState),
+		"without_state":    len(workspacesWithoutState),
+		"already_migrated": len(existingStates),
+		"to_migrate":       len(workspacesWithState),
 	}).Info("Análise de workspaces concluída")
-	
+
 	if len(workspacesWithoutState) > 0 {
 		m.logger.WithField("workspaces", workspacesWithoutState).Info("Workspaces sem estado do Terraform (serão ignorados)")
 	}
-	
+
 	if len(existingStates) > 0 {
 		m.logger.WithField("workspaces", existingStates).Info("Workspaces já migrados anteriormente (serão pulados)")
 	}
@@ -314,13 +337,16 @@ func (m *Migrator) migrateWorkspace(ctx context.Context, workspace terraform.Wor
 		return nil
 	}
 
+	// Obter nome limpo para upload no S3
+	stateName := m.removeEnvironmentSuffix(workspace.Name)
+
 	// Retry logic para upload
 	var uploadErr error
 	for attempt := 1; attempt <= m.config.Migration.RetryAttempts; attempt++ {
 		uploadErr = m.s3Client.UploadState(
 			ctx,
 			m.config.TerraformCloud.Organization,
-			workspace.Name,
+			stateName,
 			stateData.StateContent,
 			stateData.Metadata,
 		)
